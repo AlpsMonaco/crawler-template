@@ -1,32 +1,11 @@
-const { writeFile, readFile } = require('fs/promises')
+const { readFile } = require('fs/promises')
 const { Menu, app, BrowserWindow, ipcMain } = require('electron')
 const path = require('node:path')
+const { config, saveConfig, loadConfig } = require('./config')
+const { time } = require('./util')
+const { Log } = require('./log')
 
-const config = {
-  width: 800,
-  height: 600,
-  maxmize: false,
-  url: null
-}
 
-async function saveConfig() {
-  const data = JSON.stringify(config)
-  await writeFile("config.json", data)
-}
-
-let isConfigLoaded = false
-async function loadConfig() {
-  if (isConfigLoaded) return
-  try {
-    const data = JSON.parse(await readFile("config.json"))
-    config.width = data.width
-    config.height = data.height
-    config.maxmize = data.maxmize
-    isConfigLoaded = true
-  } catch (e) {
-    console.error(e)
-  }
-}
 
 let mainWindow = null
 let configWindow = null
@@ -40,6 +19,7 @@ async function createMainWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   })
+  mainWindow.webContents.openDevTools()
   const menu = Menu.buildFromTemplate(
     [
       {
@@ -94,6 +74,7 @@ async function createConfigWindow() {
     }
   }
   configWindow = new BrowserWindow(windowConfig)
+  // configWindow.webContents.openDevTools()
   configWindow.loadFile("config.html")
   configWindow.setMenuBarVisibility(false)
   configWindow.addListener('close', () => {
@@ -111,9 +92,26 @@ app.whenReady().then(() => {
 
 ipcMain.on('url-config', (event, url) => {
   if (configWindow) {
-    console.log(url)
-    configWindow.close()
+    config.url = url
+    saveConfig().then(() => {
+      configWindow.close()
+    })
   }
+})
+
+const log = Log()
+
+ipcMain.handle('get-config-url', () => {
+  return config.url ? config.url : ""
+})
+
+ipcMain.handle('refresh-log', (sender, s) => {
+  log.write('[' + time.getLocalTime() + "] " + s)
+  mainWindow.webContents.send('clear-log')
+  log.iter(s => {
+    mainWindow.webContents.send('append-log', s)
+  })
+  mainWindow.webContents.send('scroll-to-bottom')
 })
 
 app.on('window-all-closed', function () {

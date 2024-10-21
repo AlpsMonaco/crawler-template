@@ -1,27 +1,10 @@
 <head>
   <script type="text/javascript">
-    function getTime() {
-      var now = new Date();
-      var year = now.getFullYear(); //得到年份
-      var month = now.getMonth() + 1;//得到月份
-      var date = now.getDate();//得到日期
-      var hour = now.getHours();//得到小时数
-      var minute = now.getMinutes();//得到分钟数
-      var seconds = now.getSeconds();//得到分钟数
-      return year + (month >= 10 ? '-' : '-0') + month + (date >= 10 ? "-" : "-0") + date + (hour >= 10 ? " " : " 0") + hour + (minute >= 10 ? ":" : ":0") + minute + (seconds >= 10 ? ":" : ":0") + seconds
-    }
-
     const logBuffer = []
     const maxLogLine = 100
 
-    function appendLogContent(s) {
-      logBuffer.push('[' + getTime() + "] " + s )
-      if (logBuffer.length > maxLogLine) {
-        logBuffer.shift()
-      }
-      const elem = document.getElementById("log-content")
-      elem.innerHTML = logBuffer.join("\n")
-      elem.scrollTop = elem.scrollHeight
+    async function appendLogContent(s) {
+      await window.electronAPI.refreshLog(s)
     }
 
     let isSwitchOn = false

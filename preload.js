@@ -1,18 +1,19 @@
-/**
- * The preload script runs before `index.html` is loaded
- * in the renderer. It has access to web APIs as well as
- * Electron's renderer process modules and some polyfilled
- * Node.js functions.
- *
- * https://www.electronjs.org/docs/latest/tutorial/sandbox
- */
-window.addEventListener('DOMContentLoaded', () => {
-  const replaceText = (selector, text) => {
-    const element = document.getElementById(selector)
-    if (element) element.innerText = text
-  }
+const { ipcRenderer, contextBridge } = require("electron");
 
-  for (const type of ['chrome', 'node', 'electron']) {
-    replaceText(`${type}-version`, process.versions[type])
-  }
+contextBridge.exposeInMainWorld('electronAPI', {
+  refreshLog: (s) => { return ipcRenderer.invoke('refresh-log', s) }
+})
+
+ipcRenderer.on('clear-log', (sender, msg) => {
+  document.getElementById("log-content").innerHTML = ""
+})
+
+ipcRenderer.on('append-log', (sender, msg) => {
+  document.getElementById("log-content").innerHTML += msg
+  document.getElementById("log-content").innerHTML += '\n'
+})
+
+ipcRenderer.on('scroll-to-bottom', (sender, msg) => {
+  const elem = document.getElementById("log-content")
+  elem.scrollTop = elem.scrollHeight
 })
