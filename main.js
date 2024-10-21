@@ -1,14 +1,34 @@
-const { readFile } = require('fs/promises')
 const { Menu, app, BrowserWindow, ipcMain } = require('electron')
 const path = require('node:path')
 const { config, saveConfig, loadConfig } = require('./config')
 const { time } = require('./util')
 const { Log } = require('./log')
 
-
-
 let mainWindow = null
 let configWindow = null
+let crawlerWindow = null
+
+async function openCrawlerWindow() {
+  await loadConfig()
+  if (!crawlerWindow) {
+    crawlerWindow = new BrowserWindow({
+      width: 1920,
+      height: 1080,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload_crawler.js')
+      },
+      maximizable: false,
+      closable: false,
+    })
+    crawlerWindow.loadURL(config.url.indexOf("http") == -1 ? "http://" + config.url : config.url)
+    crawlerWindow.setMenuBarVisibility(false)
+    crawlerWindow.on('minimize', () => {
+      crawlerWindow.hide()
+    })
+  } else {
+    crawlerWindow.show()
+  }
+}
 
 async function createMainWindow() {
   await loadConfig()
@@ -26,16 +46,16 @@ async function createMainWindow() {
         label: '选项',
         submenu: [
           {
+            label: '配置地址',
+            click: () => createConfigWindow(),
+          },
+          {
+            label: '显示实时窗口',
+            click: () => openCrawlerWindow(),
+          },
+          {
             label: '打开控制台',
             click: () => { mainWindow.webContents.openDevTools() }
-          },
-          {
-            label: '刷新',
-            click: () => { mainWindow.reload() }
-          },
-          {
-            click: () => createConfigWindow(),
-            label: '配置地址'
           },
         ]
       }
@@ -57,6 +77,12 @@ async function createMainWindow() {
     config.width = size[0]
     config.height = size[1]
     saveConfig()
+  })
+  mainWindow.on('close', () => {
+    if (crawlerWindow){ 
+      crawlerWindow.closable = true
+      crawlerWindow.close()
+    }
   })
 }
 
