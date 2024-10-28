@@ -20,6 +20,7 @@ async function openCrawlerWindow() {
       maximizable: false,
       closable: false,
     })
+    crawlerWindow.webContents.openDevTools()
     crawlerWindow.loadURL(config.url.indexOf("http") == -1 ? "http://" + config.url : config.url)
     crawlerWindow.setMenuBarVisibility(false)
     crawlerWindow.on('minimize', () => {
@@ -39,7 +40,6 @@ async function createMainWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   })
-  mainWindow.webContents.openDevTools()
   const menu = Menu.buildFromTemplate(
     [
       {
