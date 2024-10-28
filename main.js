@@ -79,7 +79,7 @@ async function createMainWindow() {
     saveConfig()
   })
   mainWindow.on('close', () => {
-    if (crawlerWindow){ 
+    if (crawlerWindow) {
       crawlerWindow.closable = true
       crawlerWindow.close()
     }
@@ -142,4 +142,13 @@ ipcMain.handle('refresh-log', (sender, s) => {
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()
+})
+
+ipcMain.on('crawl-error', function (event, arg) {
+  log.write("存在错误!")
+  log.write(arg)
+})
+
+ipcMain.on('crawl-done', function (event, arg) {
+  
 })

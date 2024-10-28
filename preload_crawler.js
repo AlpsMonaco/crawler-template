@@ -1,49 +1,15 @@
 const { ipcRenderer } = require("electron/renderer")
 
-const crawlConfig = {
-  enableCrawling: false,
-  crawlingInterval: 3000
-}
-
-ipcRenderer.on('set-is-crawl', (sender, msg) => {
-  crawlConfig.enableCrawling = msg
+ipcRenderer.on('perform-crawling', async (sender, msg) => {
+  try {
+    let result = await performCrawling()
+    ipcRenderer.send('crawl-done', result)
+  } catch (e) {
+    ipcRenderer.send('crawl-error', e)
+  }
 })
 
-ipcRenderer.on('set-crawler-interval', (sender, msg) => {
-  crawlConfig.crawlingInterval = msg
-})
-
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-}
-
-function switchCrawlingState(state) {
-  crawlConfig.enableCrawling = state
-}
-
-function setCrawlingInterval(interval) {
-  if (typeof interval == "number" || typeof interval == "bigint") {
-    crawlConfig.crawlingInterval = interval
-  }
-}
-
-let performCrawling = async function () {
-  throw ("not logic")
-}
-
-async function startCrawlingLoop() {
-  for (; ;) {
-    await sleep(crawlConfig.crawlingInterval)
-    if (!crawlConfig.enableCrawling) {
-      continue
-    }
-    await performCrawling()
-  }
-}
-
-performCrawling = async function () {
+async function performCrawling() {
   const elemList = document.getElementsByClassName("entry-list list")
   if (elemList) {
     console.log(elemList)
@@ -51,10 +17,8 @@ performCrawling = async function () {
       for (let v of elemList[0].children) {
         console.log(v)
       }
-      switchCrawlingState(false)
+      setEnableCrawling(false)
     }
     return
   }
 }
-
-startCrawlingLoop()
